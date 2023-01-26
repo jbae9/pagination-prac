@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>영화 리스트</title>
+    <style>
+      table {
+        border: 1px solid black;
+      }
+      td {
+        border: 1px solid black;
+      }
+      li {
+        display: inline-block;
+        padding: 7px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>영화 리스트 보기</h1>
+    <a href="register.html">영화 등록하러 가기</a>
+    <table>
+      <!-- colspan="5" -->
+      <thead>
+        <th>ID</th>
+        <th>제목</th>
+        <th>등록자</th>
+        <th>조회수</th>
+        <th>등록날짜</th>
+      </thead>
+
+      <tbody id="movies"></tbody>
+    </table>
+    <ul id="pagination"></ul>
+  </body>
+</html>
+<script>
+  // 브라우저에서 쓴 query string을 js에서 쓸 수 있게 해주는 코드
+  const urlSearch = new URLSearchParams(location.search);
+  const page = urlSearch.get("page") || 1;
+
+  console.log(page);
+
+  fetch(`http://localhost:3000/movies?page=${page}`)
+    .then((response) => response.json())
+    .then((movies) => {
+      // const Moviesdev = (document.getElementById("movies").innerHTML =
+      //   movie.movie_title);
+      console.log(movies);
+      // {
+      //   pageInfo, movieList;
+      // }
+      const html = movies.moviesList.map((movie) => {
+        return `
+        <tr>
+          <td>${movie.id}</td>
+          <td><a href="movie.html?id=${movie.id}">${movie.movie_title}</td>
+          <td>${movie.name}</td>
+          <td>${movie.hit_count}</td>
+          <td>${movie.created_at}</td>
+        </tr> `;
+      });
+      // Moviesdev.append(temphtml);
+      console.log(html.join());
+      document.getElementById("movies").innerHTML = html.join("");
+
+      const lastPage = movies.pageInfo.lastPage;
+      const currentPage = Number(page)
+      const pagesInPageGroup = 3
+
+      // 1~2페이지는 그룹1, 3~4페이지는 그룹2
+      const pageGroup = Math.ceil(currentPage/pagesInPageGroup)
+
+      // 페이지 그룹1의 마지막 페이지는 2
+      const pageGroupLast = pageGroup * pagesInPageGroup > lastPage ? lastPage : pageGroup * pagesInPageGroup
+
+      // 페이지 그룹1의 첫번째 페이지는 1
+      // => 마지막 페이지 숫자(2) - 한 페이지 그룹에 들어가는 페이지 수(2) - 1
+      // const pageGroupFirst = pageGroupLast - (pagesInPageGroup - 1) < 1 ? 1 : pageGroupLast - (pagesInPageGroup -1)
+      const pageGroupFirst = pageGroup === 1 ? 1 : (pageGroup-1) * pagesInPageGroup + 1
+      console.log('pageGroupLast', pageGroupLast,'pageGroupFirst',pageGroupFirst)
+
+      const pages = [];
+
+      // 전 페이지 그룹으로 가기
+      if (pageGroup > 1) {
+        // 이전 페이지 그룹 - 1 => 이전 페이지 그룹의 마지막 페이지는 (pageGroup-1)*2
+        pages.push(`<li><a href=?page=${(pageGroup-1)*pagesInPageGroup}><<</a></li>`)
+      }
+
+      // 페이지 그룹의 첫번 째 페이지가 1보다 크면 이전 화살 만들기
+      if (currentPage > 1) {
+        pages.push(`<li><a href=?page=${currentPage-1}><</a></li>`)
+      }
+
+      // 페이지 그룹의 마지막 페이지까지 페이지 숫자 렌더링 하기
+      for (i = pageGroupFirst; i <= pageGroupLast; i++) {
+        pages.push(`<li><a href=?page=${i}>${i}</a></li>`);
+      }
+
+      // 페이지 그룹의 마지막 페이지가 총 마지막 페이지보다 작을 때 다음 화살 만들기
+      if (currentPage < lastPage) {
+        pages.push(`<li><a href=?page=${currentPage+1}>></a></li>`);
+      }
+
+      // 다음 페이지 그룹으로 가기
+      if (pageGroupLast < lastPage) {
+        // 다음 페이지 그룹 + 2 => 다음 페이지 그룹의 첫 페이지는 pageGroup * pagesInPageGroup + 1
+        pages.push(`<li><a href=?page=${pageGroup * pagesInPageGroup + 1}>>></a></li>`)
+      }
+
+      document.getElementById("pagination").innerHTML = pages.join("");
+    });
+</script>
